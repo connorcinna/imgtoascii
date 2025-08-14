@@ -142,64 +142,6 @@ std::string process_png_file(int scale)
     return ascii_out;
 }
 
-std::string change_filename(std::string filename)
-{
-    size_t pos = filename.find_first_of(".", 0);
-    const std::string grayscale = "grayscale";
-    std::string first = filename.substr(0, pos);
-    std::string second = filename.substr(pos+1, filename.size());
-    first.append(grayscale);
-    first.append(".");
-    first.append(second);
-    return first;
-}
-
-void write_png(std::string filename)
-{
-    std::string out_name = change_filename(filename);
-    FILE* fp = fopen(out_name.c_str(), "wb");
-    if (!fp)
-    {
-        std::cout << "unable to open file for writing" << std::endl;
-        exit(-3);
-    }
-    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    png_infop info = png_create_info_struct(png);
-    if (setjmp(png_jmpbuf(png)))
-    {
-        std::cout << "png_jmpbuf" << std::endl;
-        exit(-4);
-    }
-    png_init_io(png, fp);
-    png_set_IHDR(
-      png,
-      info,
-      width, height,
-      8,
-      PNG_COLOR_TYPE_RGBA,
-      PNG_INTERLACE_NONE,
-      PNG_COMPRESSION_TYPE_DEFAULT,
-      PNG_FILTER_TYPE_DEFAULT
-    );
-    png_write_info(png, info);
-
-    if (!row_pointers)
-    {
-        std::cout << "unable to get reference to grid for writing" << std::endl;
-        exit(-5);
-    }
-    png_write_image(png, row_pointers);
-    png_write_end(png, nullptr);
-
-    for (int y = 0; y < height; y++)
-    {
-        free(row_pointers[y]);
-    }
-    free(row_pointers);
-    fclose(fp);
-    png_destroy_write_struct(&png, &info);
-}
-
 int main(int argc, char** argv)
 {
     int opt;
@@ -229,6 +171,6 @@ int main(int argc, char** argv)
     }
     read_png(input);
     std::string ascii = process_png_file(scale);
-    write_png(input);
     std::cout << ascii << std::endl;
+    free(row_pointers);
 }
