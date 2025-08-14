@@ -92,14 +92,15 @@ void read_png(std::string filename)
     png_destroy_read_struct(&png, &info, nullptr);
 }
 
-const char pixel_to_char(png_byte* block)
+const char pixel_to_char(int grayscale_val)
 {
-    return grayramp.at(ceil(grayramp_length - 1) * block[0] / 255);
+    return grayramp.at(ceil((grayramp_length - 1) * grayscale_val / 255));
 }
 
 png_byte process_pixel_block(int scale, int startx, int starty)
 {
     int grayscale_block_sum = 0;
+    int alpha_sum = 0;
     int count = 0;
     for (int y = starty; y < starty + scale && y < height; ++y)
     {
@@ -108,6 +109,7 @@ png_byte process_pixel_block(int scale, int startx, int starty)
         {
             png_byte* pixel = &(row[x * 4]);
             grayscale_block_sum += (0.21*pixel[0] + 0.72*pixel[1] + 0.07*pixel[2]);
+            alpha_sum += pixel[3];
             ++count;
         }
     }
@@ -115,8 +117,12 @@ png_byte process_pixel_block(int scale, int startx, int starty)
     avg_pixel[0] = grayscale_block_sum / count;
     avg_pixel[1] = grayscale_block_sum / count;
     avg_pixel[2] = grayscale_block_sum / count;
-    avg_pixel[3] = 255;
-    return pixel_to_char(avg_pixel);
+    avg_pixel[3] = alpha_sum / count;
+    if (avg_pixel[3] == 0)
+    {
+        return pixel_to_char(255);
+    }
+    return pixel_to_char(avg_pixel[0]);
 }
 
 std::string process_png_file(int scale)
