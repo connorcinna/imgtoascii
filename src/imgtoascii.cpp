@@ -122,10 +122,12 @@ png_byte process_pixel_block(int scale, int startx, int starty)
 std::string process_png_file(int scale)
 {
     std::string ascii_out;
-    for (int y = 0; y < height; y += scale)
+    //to compensate for characters typically being taller than wide, sample only half as often for height
+    // y += scale*2
+    for (int y = 0; y < (height + scale); y += scale*2)
     {
         png_byte* row = row_pointers[y];
-        for (int x = 0; x < width; x += scale)
+        for (int x = 0; x < width + scale; x += scale)
         {
             ascii_out.push_back(process_pixel_block(scale, x, y));
         }
@@ -194,8 +196,6 @@ void write_png(std::string filename)
 
 int main(int argc, char** argv)
 {
-    //factor to scale down by
-    //e.g. 360x360 img becomes 60x60
     int opt;
     std::string input("");
     int scale(0);
@@ -204,9 +204,12 @@ int main(int argc, char** argv)
         switch (opt)
         {
             case 'i':
+                //input file
                 input = optarg;
                 break;
             case 's':
+                //factor to scale down by
+                //e.g. 360x360 img becomes 60x60
                 scale = atoi(optarg);
                 break;
             default:
