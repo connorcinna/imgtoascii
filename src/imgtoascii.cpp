@@ -3,8 +3,8 @@
 #include <iostream>
 #include <string>
 #include <cmath>
-#include <unistd.h>
 #include <png.h>
+#include "../getopt.h"
 
 #ifndef png_jmpbuf
 #  define png_jmpbuf(png_ptr) ((png_ptr)->png_jmpbuf)
@@ -16,14 +16,14 @@ png_byte color_type;
 png_byte bit_depth;
 png_byte** row_pointers = nullptr;
 
-void usage()
+static void usage()
 {
     std::cout << "Usage: imgtoascii -i [input file] -s [downscale factor]";
     std::cout << std::endl;
     exit(-1);
 }
 
-void read_png(std::string filename)
+static void read_png(std::string filename)
 {
     FILE *fp = fopen(filename.c_str(), "rb");
     if (!fp)
@@ -92,12 +92,12 @@ void read_png(std::string filename)
     png_destroy_read_struct(&png, &info, nullptr);
 }
 
-const char pixel_to_char(int grayscale_val)
+static const char pixel_to_char(int grayscale_val)
 {
     return grayramp.at(ceil((grayramp_length - 1) * grayscale_val / 255));
 }
 
-png_byte process_pixel_block(int scale, int startx, int starty)
+static png_byte process_pixel_block(int scale, int startx, int starty)
 {
     int grayscale_block_sum = 0;
     int alpha_sum = 0;
@@ -113,6 +113,7 @@ png_byte process_pixel_block(int scale, int startx, int starty)
             ++count;
         }
     }
+    count = count == 0 ? 1 : count;
     png_byte avg_pixel[4];
     avg_pixel[0] = grayscale_block_sum / count;
     avg_pixel[1] = grayscale_block_sum / count;
@@ -125,7 +126,7 @@ png_byte process_pixel_block(int scale, int startx, int starty)
     return pixel_to_char(avg_pixel[0]);
 }
 
-std::string process_png_file(int scale)
+static std::string process_png_file(int scale)
 {
     std::string ascii_out;
     //to compensate for characters typically being taller than wide, sample only half as often for height
@@ -147,7 +148,7 @@ int main(int argc, char** argv)
     int opt;
     std::string input("");
     int scale(0);
-    while ((opt = getopt(argc, argv, "i:s:")) != -1)
+    while ((opt = getopt(argc, argv, "is")) != -1)
     {
         switch (opt)
         {
@@ -158,7 +159,7 @@ int main(int argc, char** argv)
             case 's':
                 //factor to scale down by
                 //e.g. 360x360 img becomes 60x60
-                scale = atoi(optarg);
+                scale = atoi(optarg.c_str());
                 break;
             default:
                 usage();

@@ -1,3 +1,8 @@
 build
 compile_commands.json
 .cache
+.vs
+x64
+imgtoascii
+imgtoascii.vcxproj.filters
+imgtoascii.vcxproj.user
